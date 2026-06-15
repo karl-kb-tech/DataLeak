@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // hash and never learns whether the password was found. Nothing is logged.
 
 const ENDPOINT = 'https://api.pwnedpasswords.com/range'
-const PREFIX_RE = /^[0-9A-F]{5}$/i
+const PREFIX_RE = /^[0-9A-F]{5}$/ // input is upper-cased before testing
 
 export async function POST(req: NextRequest) {
   let prefix: string

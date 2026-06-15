@@ -14,6 +14,21 @@ function isOk(status: number): boolean {
   return status >= 200 && status < 300
 }
 
+// Compares two URLs ignoring incidental differences (trailing slash, default
+// port, host case) so response_url detection doesn't false-positive on them.
+function sameUrl(a: string, b: string): boolean {
+  try {
+    const strip = (raw: string) => {
+      const u = new URL(raw)
+      const path = u.pathname.replace(/\/$/, '')
+      return `${u.protocol}//${u.host}${path}${u.search}`
+    }
+    return strip(a) === strip(b)
+  } catch {
+    return a === b
+  }
+}
+
 export function classify(entry: SherlockEntry, probe: ProbeResult): boolean {
   switch (entry.errorType) {
     case 'status_code': {
@@ -30,7 +45,7 @@ export function classify(entry: SherlockEntry, probe: ProbeResult): boolean {
     case 'response_url': {
       // Present unless the request was redirected to the platform's error URL.
       if (!entry.errorUrl) return isOk(probe.status)
-      return probe.finalUrl !== entry.errorUrl
+      return !sameUrl(probe.finalUrl, entry.errorUrl)
     }
     default:
       return false

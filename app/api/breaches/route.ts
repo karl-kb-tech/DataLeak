@@ -16,6 +16,7 @@ import type { Breach, BreachSource, SourceStatus } from '@/lib/breaches/types'
 // "Powered by LeakCheck" attribution link (ToS requirement).
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL_MAX_LEN = 254 // RFC 5321 maximum
 
 export async function POST(req: NextRequest) {
   let email: string
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
   }
 
-  if (!EMAIL_RE.test(email)) {
+  if (email.length > EMAIL_MAX_LEN || !EMAIL_RE.test(email)) {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 })
   }
 

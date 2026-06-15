@@ -67,4 +67,8 @@ describe('classify — response_url', () => {
   it('present when not redirected to errorUrl', () => {
     expect(classify(entry, probe({ finalUrl: 'https://x/cooluser' }))).toBe(true)
   })
+
+  it('treats trailing-slash differences as the same error URL (still absent)', () => {
+    expect(classify(entry, probe({ finalUrl: 'https://x/404/' }))).toBe(false)
+  })
 })

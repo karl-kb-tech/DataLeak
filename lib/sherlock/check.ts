@@ -15,6 +15,20 @@ const DEFAULT_HEADERS: Record<string, string> = {
   Accept: 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8',
 }
 
+// Recursively substitutes "{}" with the (charset-validated) username inside a
+// platform's request_payload template, so POST-based platforms get the username
+// in their JSON body rather than only in the URL.
+export function fillPayload(payload: unknown, username: string): unknown {
+  if (typeof payload === 'string') return payload.replace('{}', username)
+  if (Array.isArray(payload)) return payload.map((p) => fillPayload(p, username))
+  if (payload && typeof payload === 'object') {
+    return Object.fromEntries(
+      Object.entries(payload).map(([k, v]) => [k, fillPayload(v, username)]),
+    )
+  }
+  return payload
+}
+
 export async function checkPlatform(
   platform: Platform,
   username: string,
@@ -40,11 +54,21 @@ export async function checkPlatform(
     ? platform.urlProbe.replace('{}', encodeURIComponent(username))
     : url
 
+  const method = platform.request_method ?? 'GET'
+  const hasBody = method !== 'GET' && platform.request_payload != null
+
   try {
     const res = await fetch(probeUrl, {
-      method: platform.request_method ?? 'GET',
+      method,
       redirect: 'follow',
-      headers: { ...DEFAULT_HEADERS, ...platform.headers },
+      headers: {
+        ...DEFAULT_HEADERS,
+        ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
+        ...platform.headers,
+      },
+      body: hasBody
+        ? JSON.stringify(fillPayload(platform.request_payload, username))
+        : undefined,
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     })
     // Only message-type detection needs the body; avoid downloading it otherwise.
