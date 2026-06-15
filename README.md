@@ -31,7 +31,7 @@ Ephemerality is the core architectural constraint, enforced at every layer:
 | Check | Source | What is sent |
 |---|---|---|
 | **Password exposure** | HIBP Pwned Passwords | A 5-char SHA-1 prefix only — never the password |
-| **Email in breaches** | LeakCheck (public) + XposedOrNot | Your email, to look up known breaches |
+| **Email in breaches** | LeakCheck (public) + XposedOrNot, plus HIBP when an API key is configured | Your email, to look up known breaches |
 | **Username footprint** | Sherlock platform patterns | Your username, checked against public profile URLs |
 
 Every external call is fanned out with `Promise.allSettled`, so one service
@@ -47,10 +47,16 @@ queried and what was sent to them — that transparency is the point.
 - **Next.js 16** (App Router) · **TypeScript** (strict)
 - **Tailwind CSS**
 - **jsPDF** for client-side report export
+- **Vitest** for unit tests
 - Deployed on **Vercel** (stateless serverless API routes)
 
 No Python, no subprocesses — tool logic (Sherlock / theHarvester equivalents)
 is reimplemented in TypeScript.
+
+API routes are protected by per-route, in-memory rate limiting and strict
+input validation, and the app ships a Content-Security-Policy and hardened
+security headers. None of this involves persistence or logging — the
+ephemerality constraint holds throughout.
 
 ---
 
@@ -66,10 +72,13 @@ Open [http://localhost:3000](http://localhost:3000).
 ```bash
 npm run build   # production build
 npm run lint    # lint
+npm test        # run the unit tests (Vitest)
 ```
 
 No environment variables are required for the MVP — every data source is
-currently keyless.
+keyless by default. Setting an optional `HIBP_API_KEY` (see `.env.example`)
+additionally queries the Have I Been Pwned breach API for richer email
+results; without it, the email check falls back to LeakCheck + XposedOrNot.
 
 ---
 
@@ -87,7 +96,11 @@ app/
 lib/
   hashPassword.ts    # client-side SHA-1 prefix/suffix
   dedupeBreaches.ts  # cross-source breach-name normalisation
-  sources/           # upstream source adapters
+  validation.ts      # server-side input validation/normalisation
+  rateLimit.ts       # in-memory, ephemeral per-route rate limiting
+  concurrency.ts     # bounded-concurrency fan-out helper
+  sources/           # upstream breach source adapters
+  sherlock/          # username enumeration (loader, classify, check)
 components/          # UI components
 ```
 
