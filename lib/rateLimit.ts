@@ -52,11 +52,19 @@ export function rateLimit(
   return { ok: true, remaining: limit - win.count, retryAfter: 0 }
 }
 
-/** Best-effort client identifier from proxy headers (Vercel sets these). */
+/**
+ * Best-effort client identifier from proxy headers.
+ *
+ * Prefer `x-real-ip`: on Vercel the platform sets it to the true client IP and
+ * it cannot be spoofed by the caller. `x-forwarded-for` is only a fallback — a
+ * client can prepend a forged entry, so the leftmost value there is untrusted
+ * and would let an attacker rotate fake IPs to evade the limit.
+ */
 export function clientKey(req: NextRequest): string {
+  const realIp = req.headers.get('x-real-ip')?.trim()
+  if (realIp) return realIp
   const forwarded = req.headers.get('x-forwarded-for')
-  const ip = forwarded?.split(',')[0]?.trim() || req.headers.get('x-real-ip')
-  return ip || 'unknown'
+  return forwarded?.split(',')[0]?.trim() || 'unknown'
 }
 
 // Route helper: returns a 429 response if the caller is over the limit for this
