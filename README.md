@@ -44,7 +44,7 @@ queried and what was sent to them — that transparency is the point.
 
 ## Stack
 
-- **Next.js 15** (App Router) · **TypeScript** (strict)
+- **Next.js 16** (App Router) · **TypeScript** (strict)
 - **Tailwind CSS**
 - **jsPDF** for client-side report export
 - Deployed on **Vercel** (stateless serverless API routes)
