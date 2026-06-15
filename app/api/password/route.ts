@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { validatePasswordPrefix } from '@/lib/validation'
+import { enforceRateLimit } from '@/lib/rateLimit'
 
 // Forwards a 5-char SHA-1 prefix to HIBP Pwned Passwords (k-anonymity).
 //
@@ -11,19 +13,21 @@ import { NextRequest, NextResponse } from 'next/server'
 // hash and never learns whether the password was found. Nothing is logged.
 
 const ENDPOINT = 'https://api.pwnedpasswords.com/range'
-const PREFIX_RE = /^[0-9A-F]{5}$/ // input is upper-cased before testing
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'password', 60)
+  if (limited) return limited
+
   let prefix: string
   try {
     const body = await req.json()
-    prefix = String(body?.prefix ?? '').toUpperCase()
+    const valid = validatePasswordPrefix(body?.prefix)
+    if (!valid.ok) {
+      return NextResponse.json({ error: 'invalid_prefix' }, { status: 400 })
+    }
+    prefix = valid.value
   } catch {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
-  }
-
-  if (!PREFIX_RE.test(prefix)) {
-    return NextResponse.json({ error: 'invalid_prefix' }, { status: 400 })
   }
 
   try {

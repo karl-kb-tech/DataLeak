@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPlatforms } from '@/lib/sherlock/loader'
 import { checkPlatform } from '@/lib/sherlock/check'
 import { mapWithConcurrency } from '@/lib/concurrency'
+import { validateUsername } from '@/lib/validation'
+import { enforceRateLimit } from '@/lib/rateLimit'
 
 // Checks a username against platform URL patterns sourced from Sherlock's
 // data.json (reimplemented in TS — no Python, no subprocess).
@@ -16,20 +18,22 @@ import { mapWithConcurrency } from '@/lib/concurrency'
 export const maxDuration = 60
 
 const CONCURRENCY = 12
-// Strip a leading @, then require a conservative handle charset.
-const USERNAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,29}$/
 
 export async function POST(req: NextRequest) {
+  // The sweep is expensive (hundreds of outbound checks) — limit it tightly.
+  const limited = enforceRateLimit(req, 'username', 5)
+  if (limited) return limited
+
   let username: string
   try {
     const body = await req.json()
-    username = String(body?.username ?? '').trim().replace(/^@+/, '')
+    const valid = validateUsername(body?.username)
+    if (!valid.ok) {
+      return NextResponse.json({ error: 'invalid_username' }, { status: 400 })
+    }
+    username = valid.value
   } catch {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
-  }
-
-  if (!USERNAME_RE.test(username)) {
-    return NextResponse.json({ error: 'invalid_username' }, { status: 400 })
   }
 
   const platforms = await getPlatforms()

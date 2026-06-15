@@ -3,6 +3,8 @@ import { checkLeakCheck } from '@/lib/sources/leakcheck'
 import { checkXposedOrNot } from '@/lib/sources/xposedornot'
 import { checkHibp } from '@/lib/sources/hibp'
 import { mergeBreaches } from '@/lib/dedupeBreaches'
+import { validateEmail } from '@/lib/validation'
+import { enforceRateLimit } from '@/lib/rateLimit'
 import type { Breach, BreachSource, SourceStatus } from '@/lib/breaches/types'
 
 // Fans out an email to LeakCheck (public) and XposedOrNot, plus HIBP when an
@@ -15,20 +17,20 @@ import type { Breach, BreachSource, SourceStatus } from '@/lib/breaches/types'
 // NOTE: any UI showing LeakCheck-derived results must display a
 // "Powered by LeakCheck" attribution link (ToS requirement).
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const EMAIL_MAX_LEN = 254 // RFC 5321 maximum
-
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req, 'breaches', 20)
+  if (limited) return limited
+
   let email: string
   try {
     const body = await req.json()
-    email = String(body?.email ?? '').trim().toLowerCase()
+    const valid = validateEmail(body?.email)
+    if (!valid.ok) {
+      return NextResponse.json({ error: 'invalid_email' }, { status: 400 })
+    }
+    email = valid.value
   } catch {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
-  }
-
-  if (email.length > EMAIL_MAX_LEN || !EMAIL_RE.test(email)) {
-    return NextResponse.json({ error: 'invalid_email' }, { status: 400 })
   }
 
   // HIBP is opt-in: only queried when a key is present. Keyless deployments
