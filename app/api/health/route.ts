@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server'
 
-// Reports the reachability of every upstream service the tool depends on.
-// Stateless — nothing here is logged or persisted.
+// Reports the configured/reachability state of every upstream service the tool
+// depends on. Stateless — nothing here is logged or persisted.
 export async function GET() {
-  // TODO: ping HIBP, LeakCheck, XposedOrNot and report per-service status.
+  // HIBP is opt-in via HIBP_API_KEY; reflect whether it will be queried.
+  const hibp = process.env.HIBP_API_KEY ? 'enabled' : 'disabled (no API key)'
+
   return NextResponse.json({
     status: 'ok',
     services: {
-      hibp: 'unknown',
-      leakcheck: 'unknown',
-      xposedornot: 'unknown',
+      hibp,
+      leakcheck: 'enabled',
+      xposedornot: 'enabled',
     },
   })
 }

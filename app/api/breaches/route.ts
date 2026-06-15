@@ -1,14 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { checkLeakCheck } from '@/lib/sources/leakcheck'
+import { checkXposedOrNot } from '@/lib/sources/xposedornot'
+import { checkHibp } from '@/lib/sources/hibp'
+import { mergeBreaches } from '@/lib/dedupeBreaches'
+import type { Breach, BreachSource, SourceStatus } from '@/lib/breaches/types'
 
-// Fans out an email to LeakCheck (public) and XposedOrNot, then de-dupes the
-// merged breach list on normalised breach name.
+// Fans out an email to LeakCheck (public) and XposedOrNot, plus HIBP when an
+// API key is configured, then de-dupes the merged breach list on normalised
+// breach name.
 //
-// Use Promise.allSettled — never Promise.all. If one source is down the other
-// must still return. Nothing about the query or its result is logged.
+// Uses Promise.allSettled — never Promise.all. If one source is down the others
+// must still return. Nothing about the query or its result is logged or stored.
 //
 // NOTE: any UI showing LeakCheck-derived results must display a
 // "Powered by LeakCheck" attribution link (ToS requirement).
-export async function POST(_req: NextRequest) {
-  // TODO: validate + normalise email, fan out to both sources, de-dupe.
-  return NextResponse.json({ error: 'not_implemented' }, { status: 501 })
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export async function POST(req: NextRequest) {
+  let email: string
+  try {
+    const body = await req.json()
+    email = String(body?.email ?? '').trim().toLowerCase()
+  } catch {
+    return NextResponse.json({ error: 'invalid_request' }, { status: 400 })
+  }
+
+  if (!EMAIL_RE.test(email)) {
+    return NextResponse.json({ error: 'invalid_email' }, { status: 400 })
+  }
+
+  // HIBP is opt-in: only queried when a key is present. Keyless deployments
+  // gracefully fall back to LeakCheck + XposedOrNot.
+  const hibpKey = process.env.HIBP_API_KEY
+  const checks: { source: BreachSource; run: () => Promise<Breach[]> }[] = [
+    { source: 'leakcheck', run: () => checkLeakCheck(email) },
+    { source: 'xposedornot', run: () => checkXposedOrNot(email) },
+  ]
+  if (hibpKey) {
+    checks.push({ source: 'hibp', run: () => checkHibp(email, hibpKey) })
+  }
+
+  const settled = await Promise.allSettled(checks.map((c) => c.run()))
+
+  const breaches: Breach[] = []
+  const sources: SourceStatus[] = checks.map((check, i) => {
+    const result = settled[i]
+    if (result.status === 'fulfilled') {
+      breaches.push(...result.value)
+      return { source: check.source, ok: true }
+    }
+    return { source: check.source, ok: false }
+  })
+
+  return NextResponse.json({
+    breaches: mergeBreaches(breaches),
+    sources,
+    hibpEnabled: Boolean(hibpKey),
+  })
 }
