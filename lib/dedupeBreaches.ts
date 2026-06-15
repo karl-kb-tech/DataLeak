@@ -8,17 +8,20 @@
 
 import type { Breach } from './breaches/types'
 
-// Common cross-service name discrepancies. Extend as new mismatches surface.
+// Known cross-service discrepancies, keyed by the POST-normalised form (after
+// punctuation and years are stripped). We deliberately don't strip TLD suffixes
+// in normalisation — over-merging silently drops results, which the project
+// forbids — so e.g. "MySpace.com" (LeakCheck) vs "Myspace" (HIBP) is reconciled
+// here instead. Extend as new mismatches surface.
 export const BREACH_ALIASES: Record<string, string> = {
-  linkedin_2021: 'linkedin',
+  myspacecom: 'myspace',
 }
 
 export function normaliseBreachName(name: string): string {
   const base = name
     .toLowerCase()
-    .replace(/\b(19|20)\d{2}\b/g, '') // strip years
-    .replace(/[^a-z0-9]/g, '') // strip punctuation/whitespace
-    .trim()
+    .replace(/[^a-z0-9]/g, '') // strip punctuation/whitespace/underscore first
+    .replace(/(19|20)\d{2}/g, '') // then strip 4-digit years (e.g. linkedin2021)
   return BREACH_ALIASES[base] ?? base
 }
 
