@@ -30,6 +30,10 @@ export function CheckForm({ onSubmit, running }: Props) {
     e.preventDefault()
     if (running || nothingEntered) return
     onSubmit({ email: email.trim(), username: username.trim(), password, scope })
+    // Drop the raw password from state/DOM as soon as it's handed off (the hash
+    // happens inside onSubmit, on the value captured above). Minimises how long
+    // the plaintext lives in memory — it's never needed again after submission.
+    setPassword('')
   }
 
   return (
