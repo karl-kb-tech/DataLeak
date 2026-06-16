@@ -99,6 +99,12 @@ export function CheckForm({ onSubmit, running }: Props) {
       <button
         type="submit"
         disabled={running || nothingEntered}
+        // Password managers / form-filling extensions commonly mutate this
+        // submit button (and the adjacent password field) before React
+        // hydrates, which trips a benign hydration warning. The app renders
+        // identically server/client in a clean browser; scope the suppression
+        // to just this node so real mismatches elsewhere still surface.
+        suppressHydrationWarning
         className="btn-neon w-full rounded-md px-4 py-2.5 font-medium"
       >
         {running ? 'Scanning…' : 'Check my exposure'}
