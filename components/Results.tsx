@@ -1,11 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import type { Remediation } from '@/lib/remediation'
 import {
   passwordRemediation,
   breachRemediation,
   usernameRemediation,
 } from '@/lib/remediation'
+import { stripHtml } from '@/lib/breaches/format'
+import type { Breach } from '@/lib/breaches/types'
 import type {
   BreachCheck,
   PasswordCheck,
@@ -30,19 +33,27 @@ export interface UsernameState {
 function Card({
   title,
   sent,
+  alert,
   children,
 }: {
   title: string
   sent?: string
+  alert?: boolean
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-zinc-200 p-5">
+    <section className={`panel ${alert ? 'panel-alert' : ''} rounded-lg p-5`}>
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h3 className="text-base font-semibold text-zinc-900">{title}</h3>
+        <h3
+          className={`text-base font-semibold ${
+            alert ? 'text-rose-200 glow-magenta' : 'text-cyan-100 glow-cyan'
+          }`}
+        >
+          {title}
+        </h3>
         {sent && (
-          <span className="text-xs text-zinc-500">
-            Sent: <span className="font-mono">{sent}</span>
+          <span className="text-xs text-slate-500">
+            Sent: <span className="font-mono text-cyan-300">{sent}</span>
           </span>
         )}
       </div>
@@ -54,12 +65,10 @@ function Card({
 function RemediationBlock({ r, alert }: { r: Remediation; alert: boolean }) {
   return (
     <div>
-      <p
-        className={`font-medium ${alert ? 'text-red-700' : 'text-green-700'}`}
-      >
+      <p className={`font-medium ${alert ? 'text-rose-300' : 'text-emerald-300'}`}>
         {r.headline}
       </p>
-      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700">
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300 marker:text-cyan-500">
         {r.steps.map((s) => (
           <li key={s}>{s}</li>
         ))}
@@ -69,12 +78,16 @@ function RemediationBlock({ r, alert }: { r: Remediation; alert: boolean }) {
 }
 
 function Pending() {
-  return <p className="text-sm text-zinc-500">Checking…</p>
+  return (
+    <p className="text-sm text-cyan-400">
+      <span className="animate-pulse">▮</span> Scanning…
+    </p>
+  )
 }
 
 function Failed({ service }: { service: string }) {
   return (
-    <p className="text-sm text-amber-700">
+    <p className="text-sm text-amber-400">
       We couldn&apos;t check {service} right now. Please try again later.
     </p>
   )
@@ -82,8 +95,9 @@ function Failed({ service }: { service: string }) {
 
 export function PasswordResult({ slot }: { slot: Slot<PasswordCheck> }) {
   if (slot.status === 'idle') return null
+  const alert = slot.status === 'done' && slot.data.pwned
   return (
-    <Card title="Password exposure" sent="anonymous 5-character fragment">
+    <Card title="Password exposure" sent="anonymous 5-character fragment" alert={alert}>
       {slot.status === 'running' && <Pending />}
       {slot.status === 'error' && <Failed service="the password database" />}
       {slot.status === 'done' && (
@@ -104,8 +118,9 @@ export function BreachResult({
   email: string
 }) {
   if (slot.status === 'idle') return null
+  const alert = slot.status === 'done' && slot.data.breaches.length > 0
   return (
-    <Card title="Email in data breaches" sent={email}>
+    <Card title="Email in data breaches" sent={email} alert={alert}>
       {slot.status === 'running' && <Pending />}
       {slot.status === 'error' && <Failed service="the breach databases" />}
       {slot.status === 'done' && (
@@ -115,12 +130,9 @@ export function BreachResult({
             alert={slot.data.breaches.length > 0}
           />
           {slot.data.breaches.length > 0 && (
-            <ul className="divide-y divide-zinc-100 rounded-md border border-zinc-100 text-sm">
+            <ul className="divide-y divide-cyan-500/10 overflow-hidden rounded-md border border-cyan-500/20 text-sm">
               {slot.data.breaches.map((b) => (
-                <li key={b.key} className="flex justify-between gap-3 px-3 py-2">
-                  <span className="font-medium text-zinc-800">{b.title ?? b.name}</span>
-                  {b.date && <span className="text-zinc-500">{b.date}</span>}
-                </li>
+                <BreachRow key={b.key} breach={b} />
               ))}
             </ul>
           )}
@@ -131,14 +143,90 @@ export function BreachResult({
   )
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+  leakcheck: 'LeakCheck',
+  xposedornot: 'XposedOrNot',
+  hibp: 'Have I Been Pwned',
+}
+
+// A single breach, expandable for detail. "What was exposed" (data classes) and
+// the description come from HIBP only; LeakCheck/XposedOrNot supply just a name
+// and sometimes a date — so when the rich fields are absent we explain that in
+// plain English rather than showing an empty panel.
+function BreachRow({ breach }: { breach: Breach }) {
+  const [open, setOpen] = useState(false)
+  const label = breach.title ?? breach.name
+  const reportedBy = breach.sources.map((s) => SOURCE_LABELS[s] ?? s).join(', ')
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-cyan-500/5"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="font-mono text-cyan-400">{open ? '−' : '+'}</span>
+          <span className="truncate font-medium text-cyan-50">{label}</span>
+        </span>
+        {breach.date && (
+          <span className="shrink-0 font-mono text-xs text-slate-500">{breach.date}</span>
+        )}
+      </button>
+
+      {open && (
+        <div className="space-y-3 border-t border-cyan-500/10 bg-slate-950/40 px-3 py-3 text-xs leading-5 text-slate-300">
+          {breach.description ? (
+            <p>{stripHtml(breach.description)}</p>
+          ) : (
+            <p>
+              Your email address appeared in data taken from{' '}
+              <span className="text-cyan-200">{label}</span>. Treat any password you
+              used there as compromised, and change it anywhere you reused it.
+            </p>
+          )}
+
+          {breach.dataClasses && breach.dataClasses.length > 0 ? (
+            <div>
+              <p className="mb-1 font-semibold text-fuchsia-300">What was exposed</p>
+              <ul className="flex flex-wrap gap-1.5">
+                {breach.dataClasses.map((dc) => (
+                  <li
+                    key={dc}
+                    className="rounded border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-[11px] text-fuchsia-200"
+                  >
+                    {dc}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-slate-500">
+              A detailed list of exactly what was exposed isn&apos;t available from
+              the free sources used here. Assume at least your email address, and
+              possibly your password, were included.
+            </p>
+          )}
+
+          <p className="text-slate-600">Reported by: {reportedBy}</p>
+        </div>
+      )}
+    </li>
+  )
+}
+
 function SourcePanel({ slot }: { slot: { status: 'done'; data: BreachCheck } }) {
   return (
-    <div className="border-t border-zinc-100 pt-3 text-xs text-zinc-500">
+    <div className="border-t border-cyan-500/20 pt-3 text-xs text-slate-500">
       <p className="mb-1">We checked:</p>
       <ul className="flex flex-wrap gap-x-4 gap-y-1">
         {slot.data.sources.map((s) => (
           <li key={s.source}>
-            {SOURCE_LABELS[s.source] ?? s.source}: {s.ok ? 'checked' : 'unavailable'}
+            {SOURCE_LABELS[s.source] ?? s.source}:{' '}
+            <span className={s.ok ? 'text-emerald-400' : 'text-amber-400'}>
+              {s.ok ? 'checked' : 'unavailable'}
+            </span>
           </li>
         ))}
       </ul>
@@ -149,7 +237,7 @@ function SourcePanel({ slot }: { slot: { status: 'done'; data: BreachCheck } }) 
             href="https://leakcheck.io/"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline"
+            className="text-cyan-300 underline decoration-cyan-500/40 underline-offset-2 hover:text-cyan-100"
           >
             Powered by LeakCheck
           </a>
@@ -158,12 +246,6 @@ function SourcePanel({ slot }: { slot: { status: 'done'; data: BreachCheck } }) 
       )}
     </div>
   )
-}
-
-const SOURCE_LABELS: Record<string, string> = {
-  leakcheck: 'LeakCheck',
-  xposedornot: 'XposedOrNot',
-  hibp: 'Have I Been Pwned',
 }
 
 export function UsernameResult({
@@ -175,20 +257,21 @@ export function UsernameResult({
 }) {
   if (state.status === 'idle') return null
   const pct = state.total > 0 ? Math.round((state.checked / state.total) * 100) : 0
+  const alert = state.hits.length > 0
   return (
-    <Card title="Username footprint" sent={username}>
+    <Card title="Username footprint" sent={username} alert={alert}>
       {state.status === 'error' && <Failed service="the username platforms" />}
       {state.status !== 'error' && (
         <div className="space-y-3">
           {state.status === 'running' && (
             <div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-cyan-950/60">
                 <div
-                  className="h-full bg-zinc-700 transition-all"
+                  className="h-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)] transition-all"
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-slate-500">
                 Checked {state.checked} of {state.total} platforms…
               </p>
             </div>
@@ -207,7 +290,7 @@ export function UsernameResult({
                     href={h.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-zinc-700 underline"
+                    className="text-cyan-300 underline decoration-cyan-500/40 underline-offset-2 hover:text-cyan-100"
                   >
                     {h.name}
                   </a>
@@ -216,7 +299,7 @@ export function UsernameResult({
             </ul>
           )}
           {state.status === 'done' && state.summary && (
-            <p className="border-t border-zinc-100 pt-2 text-xs text-zinc-500">
+            <p className="border-t border-cyan-500/20 pt-2 text-xs text-slate-500">
               Checked {state.summary.platformsChecked} platforms ·{' '}
               {state.summary.hits} found · {state.summary.unreachable} unreachable.
             </p>

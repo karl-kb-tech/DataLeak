@@ -118,10 +118,13 @@ export default function Home() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-16">
       <header className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900">
+        <p className="mb-1 font-mono text-xs uppercase tracking-[0.35em] text-fuchsia-400 glow-magenta">
+          NZ Privacy Awareness
+        </p>
+        <h1 className="text-2xl font-bold text-cyan-50 glow-cyan">
           Your digital footprint, in plain English
         </h1>
-        <p className="mt-2 text-zinc-600">
+        <p className="mt-2 text-slate-400">
           See what is publicly findable about you, and get simple steps to reduce
           it. Nothing you enter is stored.
         </p>
@@ -135,12 +138,14 @@ export default function Home() {
         {hasResults && (
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-zinc-900">Your results</h2>
+              <h2 className="text-lg font-semibold text-cyan-100 glow-cyan">
+                Your results
+              </h2>
               {canDownload && (
                 <button
                   type="button"
                   onClick={downloadPdf}
-                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-50"
+                  className="btn-neon rounded-md px-3 py-1.5 text-sm font-medium"
                 >
                   Download report (PDF)
                 </button>
@@ -155,7 +160,7 @@ export default function Home() {
         <DomainSearch />
       </div>
 
-      <footer className="mt-12 border-t border-zinc-200 pt-6 text-xs text-zinc-500">
+      <footer className="mt-12 border-t border-cyan-500/20 pt-6 text-xs text-slate-500">
         An awareness-training aid — not a penetration-testing or people-search
         tool. Results are ephemeral and never stored.
       </footer>

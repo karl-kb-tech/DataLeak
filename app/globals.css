@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
+/* ── Tron / cyberpunk theme ───────────────────────────────────────────────
+   A committed dark theme (not tied to prefers-color-scheme): deep blue-black
+   base, a perspective-free neon grid behind everything, cyan as the primary
+   accent and magenta as the secondary. Panels are translucent with a faint
+   inner+outer glow so text stays readable against the grid. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #03060c;
+  --foreground: #d4eef7;
+  --neon-cyan: 34, 211, 238;     /* cyan-400 */
+  --neon-magenta: 232, 75, 255;  /* fuchsia */
+  --grid-line: rgba(34, 211, 238, 0.07);
 }
 
 @theme inline {
@@ -12,15 +21,104 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Flat neon grid, fixed behind all content. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events: none;
+}
+
+/* Glow vignette: cyan up top, magenta along the bottom — gives the grid depth
+   without hurting legibility in the central content column. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(var(--neon-cyan), 0.14), transparent 70%),
+    radial-gradient(ellipse 90% 50% at 50% 110%, rgba(var(--neon-magenta), 0.10), transparent 65%);
+  pointer-events: none;
+}
+
+/* Cyberpunk surface: translucent dark slab with a cyan edge + soft glow. */
+.panel {
+  background: rgba(7, 14, 22, 0.72);
+  border: 1px solid rgba(var(--neon-cyan), 0.28);
+  box-shadow:
+    0 0 22px -8px rgba(var(--neon-cyan), 0.4),
+    inset 0 0 36px -26px rgba(var(--neon-cyan), 0.7);
+  backdrop-filter: blur(3px);
+}
+
+/* Alert variant for surfaces that carry a finding (breach/pwned). */
+.panel-alert {
+  border-color: rgba(255, 77, 109, 0.4);
+  box-shadow:
+    0 0 22px -8px rgba(255, 77, 109, 0.45),
+    inset 0 0 36px -26px rgba(255, 77, 109, 0.7);
+}
+
+/* Primary neon action button. */
+.btn-neon {
+  background: rgba(var(--neon-cyan), 0.08);
+  border: 1px solid rgba(var(--neon-cyan), 0.6);
+  color: #aef3ff;
+  text-shadow: 0 0 8px rgba(var(--neon-cyan), 0.5);
+  box-shadow: 0 0 18px -6px rgba(var(--neon-cyan), 0.55);
+  transition: background 0.15s, box-shadow 0.15s, color 0.15s;
+}
+.btn-neon:hover:not(:disabled) {
+  background: rgba(var(--neon-cyan), 0.18);
+  box-shadow: 0 0 26px -4px rgba(var(--neon-cyan), 0.8);
+  color: #ffffff;
+}
+.btn-neon:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.glow-cyan {
+  text-shadow: 0 0 10px rgba(var(--neon-cyan), 0.55);
+}
+.glow-magenta {
+  text-shadow: 0 0 10px rgba(var(--neon-magenta), 0.55);
+}
+
+::selection {
+  background: rgba(var(--neon-cyan), 0.32);
+  color: #ffffff;
+}
+
+/* Neon scrollbar to match. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #05080f;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--neon-cyan), 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--neon-cyan), 0.5);
 }

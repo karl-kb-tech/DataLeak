@@ -3,8 +3,8 @@
 
 export function Disclaimer() {
   return (
-    <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-5 text-sm leading-6 text-zinc-700">
-      <h2 className="mb-2 text-base font-semibold text-zinc-900">
+    <section className="panel rounded-lg p-5 text-sm leading-6 text-slate-300">
+      <h2 className="mb-2 text-base font-semibold text-cyan-100 glow-cyan">
         Before you start — how this works
       </h2>
       <ul className="list-disc space-y-1 pl-5">

@@ -8,20 +8,20 @@ import { useState } from 'react'
 export function OsintIntro() {
   const [open, setOpen] = useState(false)
   return (
-    <section className="rounded-lg border border-zinc-200">
+    <section className="panel rounded-lg">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
       >
-        <span className="text-base font-semibold text-zinc-900">
+        <span className="text-base font-semibold text-cyan-100 glow-cyan">
           What is OSINT — and how does your organisation feed it?
         </span>
-        <span className="text-zinc-400">{open ? '−' : '+'}</span>
+        <span className="font-mono text-lg text-cyan-400">{open ? '−' : '+'}</span>
       </button>
       {open && (
-        <div className="space-y-3 border-t border-zinc-100 px-5 py-4 text-sm leading-6 text-zinc-700">
+        <div className="space-y-3 border-t border-cyan-500/20 px-5 py-4 text-sm leading-6 text-slate-300">
           <p>
             <strong>OSINT</strong> (Open-Source Intelligence) is information
             anyone can find using public sources — search engines, social media,

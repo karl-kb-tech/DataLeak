@@ -60,7 +60,7 @@ export function CheckForm({ onSubmit, running }: Props) {
           value={username}
           onChange={setUsername}
         />
-        <fieldset className="flex flex-wrap gap-4 pl-1 text-sm text-zinc-600">
+        <fieldset className="flex flex-wrap gap-4 pl-1 text-sm text-slate-400">
           <legend className="sr-only">How many platforms to check</legend>
           <label className="flex items-center gap-2">
             <input
@@ -68,6 +68,7 @@ export function CheckForm({ onSubmit, running }: Props) {
               name="scope"
               checked={scope === 'curated'}
               onChange={() => setScope('curated')}
+              className="accent-cyan-400"
             />
             Popular platforms (faster)
           </label>
@@ -77,6 +78,7 @@ export function CheckForm({ onSubmit, running }: Props) {
               name="scope"
               checked={scope === 'all'}
               onChange={() => setScope('all')}
+              className="accent-cyan-400"
             />
             Check everything (slower, noisier)
           </label>
@@ -97,12 +99,12 @@ export function CheckForm({ onSubmit, running }: Props) {
       <button
         type="submit"
         disabled={running || nothingEntered}
-        className="w-full rounded-md bg-zinc-900 px-4 py-2.5 font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+        className="btn-neon w-full rounded-md px-4 py-2.5 font-medium"
       >
-        {running ? 'Checking…' : 'Check my exposure'}
+        {running ? 'Scanning…' : 'Check my exposure'}
       </button>
       {nothingEntered && (
-        <p className="text-center text-sm text-zinc-500">
+        <p className="text-center text-sm text-slate-500">
           Fill in at least one field above to begin.
         </p>
       )}
@@ -124,7 +126,7 @@ interface FieldProps {
 function Field({ id, label, hint, type, autoComplete, placeholder, value, onChange }: FieldProps) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-zinc-900">
+      <label htmlFor={id} className="block text-sm font-medium text-cyan-100">
         {label}
       </label>
       <input
@@ -134,9 +136,9 @@ function Field({ id, label, hint, type, autoComplete, placeholder, value, onChan
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+        className="mt-1 w-full rounded-md border border-cyan-500/30 bg-slate-950/60 px-3 py-2 text-cyan-50 placeholder:text-slate-600 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400/60"
       />
-      <p className="mt-1 text-xs text-zinc-500">{hint}</p>
+      <p className="mt-1 text-xs text-slate-500">{hint}</p>
     </div>
   )
 }
