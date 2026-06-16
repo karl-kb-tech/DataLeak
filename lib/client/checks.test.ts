@@ -32,8 +32,9 @@ describe('checkPassword (k-anonymity)', () => {
 
   it('sends only the 5-char prefix, never the password', async () => {
     // SHA-1("password") = 5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
-      new Response('1E4C9B93F3F0682250B6CF8331B7EE68FD8:42', { status: 200 }),
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(
+      async () =>
+        new Response('1E4C9B93F3F0682250B6CF8331B7EE68FD8:42', { status: 200 }),
     )
     vi.stubGlobal('fetch', fetchMock)
 
@@ -54,8 +55,8 @@ describe('checkBreaches', () => {
 
   it('posts the email and returns the parsed payload', async () => {
     const payload = { breaches: [], sources: [], hibpEnabled: false }
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
-      Response.json(payload),
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(
+      async () => Response.json(payload),
     )
     vi.stubGlobal('fetch', fetchMock)
 

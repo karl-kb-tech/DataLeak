@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react'
 import { Disclaimer } from '@/components/Disclaimer'
+import { OsintIntro } from '@/components/OsintIntro'
+import { DomainSearch } from '@/components/DomainSearch'
 import { CheckForm, type CheckInput } from '@/components/CheckForm'
 import {
   PasswordResult,
@@ -98,6 +100,7 @@ export default function Home() {
 
       <div className="space-y-8">
         <Disclaimer />
+        <OsintIntro />
         <CheckForm onSubmit={run} running={running} />
 
         {hasResults && (
@@ -108,6 +111,8 @@ export default function Home() {
             <UsernameResult state={username} username={shown.username} />
           </div>
         )}
+
+        <DomainSearch />
       </div>
 
       <footer className="mt-12 border-t border-zinc-200 pt-6 text-xs text-zinc-500">
