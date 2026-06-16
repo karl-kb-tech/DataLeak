@@ -19,6 +19,7 @@ import {
   type PasswordCheck,
   type BreachCheck,
 } from '@/lib/client/checks'
+import { buildReport, type ReportInput } from '@/lib/report'
 
 const IDLE_USERNAME: UsernameState = {
   status: 'idle',
@@ -86,6 +87,34 @@ export default function Home() {
     breach.status !== 'idle' ||
     username.status !== 'idle'
 
+  const canDownload =
+    password.status === 'done' ||
+    breach.status === 'done' ||
+    username.status === 'done'
+
+  async function downloadPdf() {
+    const input: ReportInput = {}
+    if (password.status === 'done') input.password = password.data
+    if (breach.status === 'done') {
+      input.breach = {
+        email: shown.email,
+        breaches: breach.data.breaches,
+        // LeakCheck ToS: attribution required wherever its results are shown.
+        usedLeakCheck: breach.data.sources.some((s) => s.source === 'leakcheck'),
+      }
+    }
+    if (username.status === 'done') {
+      input.username = { username: shown.username, hits: username.hits }
+    }
+    const generatedAt = new Date().toLocaleString('en-NZ', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    })
+    // Lazy-load jsPDF so it stays out of the initial bundle.
+    const { downloadReport } = await import('@/lib/pdf/generatePdf')
+    downloadReport(buildReport(input, generatedAt))
+  }
+
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-16">
       <header className="mb-8">
@@ -105,7 +134,18 @@ export default function Home() {
 
         {hasResults && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-zinc-900">Your results</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-zinc-900">Your results</h2>
+              {canDownload && (
+                <button
+                  type="button"
+                  onClick={downloadPdf}
+                  className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-50"
+                >
+                  Download report (PDF)
+                </button>
+              )}
+            </div>
             <PasswordResult slot={password} />
             <BreachResult slot={breach} email={shown.email} />
             <UsernameResult state={username} username={shown.username} />
