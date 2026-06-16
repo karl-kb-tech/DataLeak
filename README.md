@@ -17,7 +17,11 @@ Ephemerality is the core architectural constraint, enforced at every layer:
 - **No database, no logging, no server-side persistence.** Search terms,
   emails, usernames and results are never written down anywhere.
 - **Results live only in your browser's memory** and vanish when you close the
-  tab.
+  tab — or sooner, via the **Clear results** button, which wipes every result
+  and the inputs echoed back on screen on demand (handy on shared machines).
+- **Nothing is cached to disk.** Check requests and responses are sent with
+  `no-store` on both the client fetch and the API response, so the browser's
+  HTTP cache never retains them.
 - **Passwords never leave your device.** They are hashed in-browser with the
   Web Crypto API; only a 5-character hash prefix is sent upstream
   ([k-anonymity](https://en.wikipedia.org/wiki/K-anonymity)).
