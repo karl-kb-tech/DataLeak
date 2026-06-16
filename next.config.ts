@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { BASE_PATH } from "./lib/basePath";
 
 // Content-Security-Policy. All upstream lookups (HIBP, LeakCheck, XposedOrNot,
 // Sherlock platforms) happen server-side, so the browser only ever talks to our
@@ -36,6 +37,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Serve the whole app under kairakau.nz/dataleak. Next prepends this to its
+  // own routes, assets, next/link and next/image automatically; raw fetch()
+  // calls to API routes are prefixed manually via BASE_PATH (see lib/basePath).
+  basePath: BASE_PATH,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -5,6 +5,7 @@ import {
   checkBreaches,
   runUsernameSweep,
 } from './checks'
+import { BASE_PATH } from '@/lib/basePath'
 
 describe('matchSuffix', () => {
   // HIBP returns "SUFFIX:COUNT" lines (suffix = SHA-1 minus the 5-char prefix).
@@ -42,7 +43,7 @@ describe('checkPassword (k-anonymity)', () => {
 
     expect(result).toEqual({ pwned: true, count: 42 })
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe('/api/password')
+    expect(url).toBe(`${BASE_PATH}/api/password`)
     const sent = JSON.parse((init as RequestInit).body as string)
     expect(sent).toEqual({ prefix: '5BAA6' })
     // The password must never appear anywhere in the request body.

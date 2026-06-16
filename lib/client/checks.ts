@@ -7,6 +7,7 @@
 
 import { hashPassword } from '@/lib/hashPassword'
 import { readSSE } from '@/lib/client/sse'
+import { BASE_PATH } from '@/lib/basePath'
 import type { Breach, SourceStatus } from '@/lib/breaches/types'
 
 export interface PasswordCheck {
@@ -42,7 +43,7 @@ export type UsernameScope = 'curated' | 'all'
  */
 export async function checkPassword(password: string): Promise<PasswordCheck> {
   const { prefix, suffix } = await hashPassword(password)
-  const res = await fetch('/api/password', {
+  const res = await fetch(`${BASE_PATH}/api/password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prefix }),
@@ -67,7 +68,7 @@ export function matchSuffix(body: string, suffix: string): PasswordCheck {
 
 /** Look up an email across the configured breach sources. */
 export async function checkBreaches(email: string): Promise<BreachCheck> {
-  const res = await fetch('/api/breaches', {
+  const res = await fetch(`${BASE_PATH}/api/breaches`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
@@ -93,7 +94,7 @@ export async function runUsernameSweep(
   scope: UsernameScope,
   handlers: UsernameHandlers,
 ): Promise<void> {
-  const res = await fetch('/api/username', {
+  const res = await fetch(`${BASE_PATH}/api/username`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, scope }),
