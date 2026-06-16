@@ -96,6 +96,31 @@ export function CheckForm({ onSubmit, running }: Props) {
         onChange={setPassword}
       />
 
+      <details className="rounded-md border border-cyan-500/20 bg-slate-950/40 text-sm">
+        <summary className="cursor-pointer select-none px-3 py-2 font-medium text-cyan-200">
+          What happens to my password?
+        </summary>
+        <div className="space-y-2 border-t border-cyan-500/10 px-3 py-3 text-slate-300">
+          <p>
+            Your password never leaves this device. The moment you hit check, your
+            browser scrambles it into a one-way code called a <em>hash</em> — like
+            a fingerprint that can&apos;t be turned back into the original password.
+          </p>
+          <p>
+            We then snip off just the <strong>first 5 characters</strong> of that
+            fingerprint and send only that tiny fragment to Have I Been Pwned. They
+            send back every leaked fingerprint starting with those same 5
+            characters, and your browser quietly checks the rest of the match
+            here, on your device.
+          </p>
+          <p>
+            So the service never sees your password — and never even sees your full
+            fingerprint — so it can&apos;t tell which one was yours. This trick is
+            called <em>k-anonymity</em>.
+          </p>
+        </div>
+      </details>
+
       <button
         type="submit"
         disabled={running || nothingEntered}
