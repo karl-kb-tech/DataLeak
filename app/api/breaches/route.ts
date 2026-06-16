@@ -56,9 +56,14 @@ export async function POST(req: NextRequest) {
     return { source: check.source, ok: false }
   })
 
-  return NextResponse.json({
-    breaches: mergeBreaches(breaches),
-    sources,
-    hibpEnabled: Boolean(hibpKey),
-  })
+  return NextResponse.json(
+    {
+      breaches: mergeBreaches(breaches),
+      sources,
+      hibpEnabled: Boolean(hibpKey),
+    },
+    // Keep the breach result out of the browser's HTTP/disk cache — same
+    // ephemerality reasoning as the password route.
+    { headers: { 'Cache-Control': 'no-store' } },
+  )
 }

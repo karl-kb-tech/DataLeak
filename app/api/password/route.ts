@@ -43,7 +43,13 @@ export async function POST(req: NextRequest) {
     const body = await res.text()
     return new NextResponse(body, {
       status: 200,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        // Belt-and-braces with the ephemerality model: tell the browser never
+        // to write this suffix list to its HTTP/disk cache. It's matched once
+        // in memory and then dropped.
+        'Cache-Control': 'no-store',
+      },
     })
   } catch {
     return NextResponse.json({ error: 'upstream_unavailable' }, { status: 502 })

@@ -47,6 +47,8 @@ export async function checkPassword(password: string): Promise<PasswordCheck> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prefix }),
+    // Don't let the browser cache the request/response — match once, discard.
+    cache: 'no-store',
   })
   if (!res.ok) throw new Error('password_check_failed')
   const body = await res.text()
@@ -72,6 +74,7 @@ export async function checkBreaches(email: string): Promise<BreachCheck> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
+    cache: 'no-store',
   })
   if (!res.ok) throw new Error('breach_check_failed')
   return (await res.json()) as BreachCheck
@@ -99,6 +102,7 @@ export async function runUsernameSweep(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, scope }),
     signal: handlers.signal,
+    cache: 'no-store',
   })
   if (!res.ok || !res.body) {
     handlers.onError?.('username_check_failed')
