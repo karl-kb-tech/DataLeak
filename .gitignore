@@ -44,3 +44,6 @@ next-env.d.ts
 # markdown — ignore all *.md except README.md (per project policy)
 *.md
 !README.md
+
+# Playwright MCP debug artifacts
+.playwright-mcp/
