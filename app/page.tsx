@@ -82,6 +82,16 @@ export default function Home() {
     }
   }
 
+  // Wipe every result slot and the echoed-back inputs without waiting for the
+  // tab to close — for shared/work machines. Also cancels any in-flight stream.
+  function clearAll() {
+    abortRef.current?.abort()
+    setPassword({ status: 'idle' })
+    setBreach({ status: 'idle' })
+    setUsername(IDLE_USERNAME)
+    setShown({ email: '', username: '' })
+  }
+
   const hasResults =
     password.status !== 'idle' ||
     breach.status !== 'idle' ||
@@ -141,15 +151,24 @@ export default function Home() {
               <h2 className="text-lg font-semibold text-cyan-100 glow-cyan">
                 Your results
               </h2>
-              {canDownload && (
+              <div className="flex items-center gap-2">
+                {canDownload && (
+                  <button
+                    type="button"
+                    onClick={downloadPdf}
+                    className="btn-neon rounded-md px-3 py-1.5 text-sm font-medium"
+                  >
+                    Download report (PDF)
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={downloadPdf}
-                  className="btn-neon rounded-md px-3 py-1.5 text-sm font-medium"
+                  onClick={clearAll}
+                  className="rounded-md border border-slate-600/60 px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:border-fuchsia-400/60 hover:text-fuchsia-200"
                 >
-                  Download report (PDF)
+                  Clear results
                 </button>
-              )}
+              </div>
             </div>
             <PasswordResult slot={password} />
             <BreachResult slot={breach} email={shown.email} />
