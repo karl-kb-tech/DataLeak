@@ -1,0 +1,63 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - paragraph [ref=e4]: NZ Privacy Awareness
+    - heading "Your digital footprint, in plain English" [level=1] [ref=e5]
+    - paragraph [ref=e6]: See what is publicly findable about you, and get simple steps to reduce it. Nothing you enter is stored.
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - heading "Before you start — how this works" [level=2] [ref=e9]
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - strong [ref=e12]: Nothing you type is stored.
+          - text: There is no database and no logging. Results live only in this browser tab and disappear when you close it.
+        - listitem [ref=e13]:
+          - strong [ref=e14]: Your password never leaves your device.
+          - text: It is scrambled in your browser; only a short, anonymous fragment is sent to check it.
+        - listitem [ref=e15]:
+          - strong [ref=e16]: Check yourself, with consent.
+          - text: This is an awareness-training aid, not a tool for looking up other people.
+        - listitem [ref=e17]:
+          - text: The only way data leaves is a PDF report
+          - emphasis [ref=e18]: you
+          - text: choose to download. Nothing is emailed or saved anywhere.
+    - button "What is OSINT — and how does your organisation feed it? +" [ref=e20]:
+      - generic [ref=e21]: What is OSINT — and how does your organisation feed it?
+      - generic [ref=e22]: +
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]: Email address
+        - textbox "Email address" [ref=e26]:
+          - /placeholder: you@example.com
+        - paragraph [ref=e27]: Checked against known data breaches.
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]: Username or handle
+          - textbox "Username or handle" [ref=e31]:
+            - /placeholder: e.g. janedoe
+          - paragraph [ref=e32]: Checked for public profiles across popular platforms.
+        - group "How many platforms to check" [ref=e33]:
+          - generic [ref=e34]: How many platforms to check
+          - generic [ref=e35]:
+            - radio "Popular platforms (faster)" [checked] [ref=e36]
+            - text: Popular platforms (faster)
+          - generic [ref=e37]:
+            - radio "Check everything (slower, noisier)" [ref=e38]
+            - text: Check everything (slower, noisier)
+      - generic [ref=e39]:
+        - generic [ref=e40]: Password
+        - textbox "Password" [ref=e41]:
+          - /placeholder: A password you want to check
+        - paragraph [ref=e42]: Scrambled in your browser — only an anonymous fragment is sent.
+      - button "Check my exposure" [disabled] [ref=e43]
+      - paragraph [ref=e44]: Fill in at least one field above to begin.
+    - generic [ref=e45]:
+      - heading "Organisation footprint (Google dorks)" [level=3] [ref=e46]
+      - paragraph [ref=e47]:
+        - text: See what an attacker can find about an organisation with nothing but a search engine. Enter a domain you are
+        - strong [ref=e48]: authorised to assess
+        - text: (e.g. your own workplace). These open Google searches in a new tab — nothing is sent or stored.
+      - generic [ref=e49]:
+        - textbox "Organisation domain" [ref=e50]:
+          - /placeholder: yourcompany.co.nz
+        - button "Build searches" [ref=e51]
+  - generic [ref=e52]: An awareness-training aid — not a penetration-testing or people-search tool. Results are ephemeral and never stored.

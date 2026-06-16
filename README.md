@@ -40,6 +40,53 @@ queried and what was sent to them — that transparency is the point.
 
 > Breach results shown from LeakCheck are **Powered by LeakCheck**.
 
+**Breach detail.** Each breach can be expanded for plain-English detail. When
+HIBP is configured, expanded rows show the breach description and exactly which
+data classes were exposed; with the keyless sources alone (which return only a
+name and sometimes a date), the row explains in plain English what to assume
+instead of showing an empty panel.
+
+**Username scope & streaming.** The username check defaults to a curated
+high-signal subset (~46 platforms) for fast, low-noise results; "Check
+everything" is an explicit opt-in that sweeps the full Sherlock set (~481
+platforms). Results stream over Server-Sent Events, so hits and progress render
+as they arrive rather than after one long blocking call.
+
+---
+
+## Beyond the personal checks
+
+The tool also includes awareness-training material aimed at the *organisation's*
+footprint, not just the individual's:
+
+- **"What is OSINT?" primer** — an inline explainer of how an organisation's
+  public footprint is built up unintentionally (reused passwords, staff
+  profiles, published files, reused usernames) and how attackers use it.
+- **Organisation domain footprint** — enter a domain you are authorised to
+  assess and the tool builds categorised Google "dork" search links (exposed
+  documents, open directories, login portals, staff/email exposure, code &
+  paste leaks, cloud storage). This is **100% client-side URL construction** —
+  the tool never queries Google itself (that would be scraping) and stores
+  nothing; it hands you ready-to-click links. Framed for authorised,
+  consent-based assessment of your own org, not bulk recon.
+
+---
+
+## Report export
+
+The only way data leaves the browser is a **PDF report you generate yourself**.
+Export is entirely client-side (jsPDF, lazy-loaded) and user-initiated — nothing
+is emailed or saved server-side. This is the single deliberate egress path in
+the ephemerality model.
+
+---
+
+## Look & feel
+
+A committed dark "Tron / cyberpunk" theme: a deep blue-black base, a flat neon
+grid behind all content, cyan as the primary accent and magenta as the
+secondary. It is not tied to `prefers-color-scheme` — the app is dark by design.
+
 ---
 
 ## Stack
@@ -89,8 +136,9 @@ app/
   api/
     password/    # HIBP k-anonymity proxy (prefix only)
     breaches/    # LeakCheck + XposedOrNot fan-out & de-dupe
-    username/    # Sherlock-style username enumeration
+    username/    # Sherlock-style enumeration, streamed over SSE
     health/      # upstream service status
+  globals.css   # Tron/cyberpunk theme (committed dark)
   layout.tsx
   page.tsx
 lib/
@@ -99,9 +147,15 @@ lib/
   validation.ts      # server-side input validation/normalisation
   rateLimit.ts       # in-memory, ephemeral per-route rate limiting
   concurrency.ts     # bounded-concurrency fan-out helper
-  sources/           # upstream breach source adapters
-  sherlock/          # username enumeration (loader, classify, check)
-components/          # UI components
+  dorks.ts           # org-domain Google-dork link builder (client-side)
+  remediation.ts     # plain-English next steps per finding
+  report.ts          # builds the report model from results
+  client/            # browser-side check orchestration + SSE consumer
+  breaches/          # breach types + HTML-stripping for descriptions
+  pdf/               # client-side PDF generation (jsPDF)
+  sources/           # upstream breach source adapters (hibp, leakcheck, xposedornot)
+  sherlock/          # username enumeration (loader, classify, check, curated subset)
+components/          # UI components (CheckForm, Results, OsintIntro, DomainSearch, Disclaimer)
 ```
 
 ---
