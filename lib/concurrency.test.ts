@@ -22,4 +22,17 @@ describe('mapWithConcurrency', () => {
   it('handles an empty list', async () => {
     expect(await mapWithConcurrency([], 4, async (x) => x)).toEqual([])
   })
+
+  it('fires onResult once per item with the result, item, and index', async () => {
+    const seen: Array<[number, number, number]> = []
+    await mapWithConcurrency([1, 2, 3], 2, async (n) => n * 10, (result, item, index) =>
+      seen.push([result, item, index]),
+    )
+    seen.sort((a, b) => a[2] - b[2])
+    expect(seen).toEqual([
+      [10, 1, 0],
+      [20, 2, 1],
+      [30, 3, 2],
+    ])
+  })
 })

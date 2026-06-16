@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import bundled from './data/data.json'
+import { CURATED_SET, type SweepScope } from './curated'
 import type { Platform, SherlockData } from './types'
 
 // Loads Sherlock platform definitions. Strategy:
@@ -46,8 +47,15 @@ async function load(): Promise<Platform[]> {
   }
 }
 
-/** Returns the platform list, memoised for this module's lifetime. */
-export function getPlatforms(): Promise<Platform[]> {
+/**
+ * Returns platform definitions, memoised for this module's lifetime.
+ *
+ * `scope` defaults to the curated high-signal subset (fast, low-noise). Pass
+ * 'all' for the full ~481-platform sweep. The full list is loaded/cached once
+ * either way; curated is just a filtered view of it.
+ */
+export function getPlatforms(scope: SweepScope = 'curated'): Promise<Platform[]> {
   if (!cache) cache = load()
-  return cache
+  if (scope === 'all') return cache
+  return cache.then((all) => all.filter((p) => CURATED_SET.has(p.name)))
 }

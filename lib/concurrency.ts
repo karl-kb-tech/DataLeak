@@ -2,10 +2,15 @@
 // Used to cap simultaneous username checks (Sherlock platform fan-out) so we
 // don't trip platform bot-detection. Results preserve input order.
 
+// `onResult`, when provided, fires as each task settles (completion order, not
+// input order) — used to stream results progressively while the sweep is still
+// running. The returned array still preserves input order for non-streaming
+// callers.
 export async function mapWithConcurrency<T, R>(
   items: readonly T[],
   limit: number,
   fn: (item: T, index: number) => Promise<R>,
+  onResult?: (result: R, item: T, index: number) => void,
 ): Promise<R[]> {
   const results = new Array<R>(items.length)
   let next = 0
@@ -14,7 +19,9 @@ export async function mapWithConcurrency<T, R>(
     while (true) {
       const index = next++
       if (index >= items.length) return
-      results[index] = await fn(items[index], index)
+      const result = await fn(items[index], index)
+      results[index] = result
+      onResult?.(result, items[index], index)
     }
   }
 
