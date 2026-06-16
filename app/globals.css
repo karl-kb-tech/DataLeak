@@ -95,6 +95,20 @@ body::after {
   cursor: not-allowed;
 }
 
+/* Script-blocked fallback notice (see ScriptBlockedNotice). Hidden, then faded
+   in after a delay — React removes the node on hydration well before this fires,
+   so a working browser never shows it. Only when scripts are blocked (no
+   hydration) does the delay elapse and the notice appear. */
+.js-fallback {
+  opacity: 0;
+  animation: js-fallback-reveal 0s linear 1.2s forwards;
+}
+@keyframes js-fallback-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
 .glow-cyan {
   text-shadow: 0 0 10px rgba(var(--neon-cyan), 0.55);
 }
