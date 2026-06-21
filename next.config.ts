@@ -21,7 +21,11 @@ const csp = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "upgrade-insecure-requests",
+  // Only in production. On http://localhost this directive makes the browser
+  // upgrade asset requests to https (which has no listener), so Firefox loads
+  // the HTML but silently fails every CSS/JS sub-resource — an unstyled, dead
+  // page. Chromium exempts localhost, which is why it only bites in Firefox.
+  ...(isDev ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
 const securityHeaders = [

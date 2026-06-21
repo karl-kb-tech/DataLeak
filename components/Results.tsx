@@ -6,15 +6,18 @@ import {
   passwordRemediation,
   breachRemediation,
   usernameRemediation,
+  infectionRemediation,
 } from '@/lib/remediation'
 import { stripHtml } from '@/lib/breaches/format'
 import type { Breach } from '@/lib/breaches/types'
 import type {
   BreachCheck,
+  InfectionCheck,
   PasswordCheck,
   UsernameDone,
   UsernameHit,
 } from '@/lib/client/checks'
+import type { InfectionMatch } from '@/lib/sources/hudsonrock'
 
 export type Slot<T> =
   | { status: 'idle' }
@@ -245,6 +248,133 @@ function SourcePanel({ slot }: { slot: { status: 'done'; data: BreachCheck } }) 
         </p>
       )}
     </div>
+  )
+}
+
+// Info-stealer malware exposure (Hudson Rock). Distinct from data breaches:
+// these are credentials lifted off a malware-infected device. The masked
+// passwords/logins are shown so a user can recognise their own — they arrive
+// pre-masked from the source, so no cleartext is ever handled here.
+export function InfectionResult({
+  slot,
+  email,
+  username,
+}: {
+  slot: Slot<InfectionCheck>
+  email: string
+  username: string
+}) {
+  if (slot.status === 'idle') return null
+  const sent = [email, username].filter(Boolean).join(', ')
+  const infected =
+    slot.status === 'done' && slot.data.matches.some((m) => m.found)
+  return (
+    <Card title="Info-stealer malware exposure" sent={sent} alert={infected}>
+      {slot.status === 'running' && <Pending />}
+      {slot.status === 'error' && <Failed service="the malware database" />}
+      {slot.status === 'done' && (
+        <div className="space-y-3">
+          <RemediationBlock r={infectionRemediation(infected)} alert={infected} />
+          {slot.data.matches.some((m) => m.found) && (
+            <ul className="divide-y divide-cyan-500/10 overflow-hidden rounded-md border border-cyan-500/20 text-sm">
+              {slot.data.matches
+                .filter((m) => m.found)
+                .map((m) => (
+                  <InfectionRow key={`${m.type}:${m.target}`} match={m} />
+                ))}
+            </ul>
+          )}
+          <div className="border-t border-cyan-500/20 pt-3 text-xs text-slate-500">
+            <p>
+              Malware-infection data{' '}
+              <a
+                href="https://www.hudsonrock.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-300 underline decoration-cyan-500/40 underline-offset-2 hover:text-cyan-100"
+              >
+                Powered by Hudson Rock
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function MaskedList({ title, values }: { title: string; values: string[] }) {
+  return (
+    <div>
+      <p className="mb-1 font-semibold text-fuchsia-300">{title}</p>
+      <ul className="flex flex-wrap gap-1.5">
+        {values.map((v, i) => (
+          <li
+            key={`${v}:${i}`}
+            className="rounded border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 font-mono text-[11px] text-fuchsia-200"
+          >
+            {v}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function InfectionRow({ match }: { match: InfectionMatch }) {
+  const [open, setOpen] = useState(false)
+  const count = match.stealers.length
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-cyan-500/5"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="font-mono text-cyan-400">{open ? '−' : '+'}</span>
+          <span className="truncate font-medium text-cyan-50">{match.target}</span>
+        </span>
+        <span className="shrink-0 font-mono text-xs text-slate-500">
+          {count} infection{count === 1 ? '' : 's'}
+        </span>
+      </button>
+
+      {open && (
+        <div className="space-y-3 border-t border-cyan-500/10 bg-slate-950/40 px-3 py-3 text-xs leading-5 text-slate-300">
+          <p className="text-slate-500">
+            These passwords and logins are partly hidden by the source — enough to
+            recognise your own, not enough for anyone to reuse.
+          </p>
+          {match.stealers.map((s, i) => (
+            <div key={i} className="space-y-2 border-l border-cyan-500/20 pl-3">
+              {s.dateCompromised && (
+                <p>
+                  <span className="text-slate-500">Device infected:</span>{' '}
+                  <span className="font-mono text-cyan-200">
+                    {s.dateCompromised.slice(0, 10)}
+                  </span>
+                </p>
+              )}
+              {s.antiviruses && s.antiviruses.length > 0 && (
+                <p>
+                  <span className="text-slate-500">Security software present:</span>{' '}
+                  {s.antiviruses.join(', ')}
+                </p>
+              )}
+              {s.topPasswords && s.topPasswords.length > 0 && (
+                <MaskedList title="Exposed passwords" values={s.topPasswords} />
+              )}
+              {s.topLogins && s.topLogins.length > 0 && (
+                <MaskedList title="Exposed logins" values={s.topLogins} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </li>
   )
 }
 

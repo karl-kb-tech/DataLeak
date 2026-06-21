@@ -37,12 +37,14 @@ Ephemerality is the core architectural constraint, enforced at every layer:
 | **Password exposure** | HIBP Pwned Passwords | A 5-char SHA-1 prefix only — never the password |
 | **Email in breaches** | LeakCheck (public) + XposedOrNot, plus HIBP when an API key is configured | Your email, to look up known breaches |
 | **Username footprint** | Sherlock platform patterns | Your username, checked against public profile URLs |
+| **Info-stealer malware exposure** | Hudson Rock (keyless Cavalier OSINT) | Your email and/or username, to look up devices infected by password-stealing malware that had a login for you saved |
 
 Every external call is fanned out with `Promise.allSettled`, so one service
 being down never blocks the rest. The UI shows exactly which services were
 queried and what was sent to them — that transparency is the point.
 
-> Breach results shown from LeakCheck are **Powered by LeakCheck**.
+> Breach results shown from LeakCheck are **Powered by LeakCheck**, and
+> info-stealer results are **Powered by Hudson Rock**.
 
 **Breach detail.** Each breach can be expanded for plain-English detail. When
 HIBP is configured, expanded rows show the breach description and exactly which
@@ -55,6 +57,16 @@ high-signal subset (~46 platforms) for fast, low-noise results; "Check
 everything" is an explicit opt-in that sweeps the full Sherlock set (~481
 platforms). Results stream over Server-Sent Events, so hits and progress render
 as they arrive rather than after one long blocking call.
+
+**Info-stealer malware exposure.** A different kind of finding from breach
+lookups: Hudson Rock's keyless OSINT data reports devices infected by
+info-stealer malware that exfiltrated saved logins. Where a breach means "a
+site you used was hacked," an info-stealer hit means "a device that signed into
+your accounts was itself compromised" — higher-signal and very teachable. The
+on-screen result can show the masked credential fragments the source returns
+(enough to recognise your own, not enough to reuse); those fragments are shown
+in the browser only and are **deliberately kept out of the PDF**, since the PDF
+is the one egress path and a partial fingerprint is still a fingerprint.
 
 ---
 
@@ -73,6 +85,12 @@ footprint, not just the individual's:
   the tool never queries Google itself (that would be scraping) and stores
   nothing; it hands you ready-to-click links. Framed for authorised,
   consent-based assessment of your own org, not bulk recon.
+- **Organisation breach & malware data** — an opt-in checkbox alongside the dork
+  builder. The "Build searches" path stays 100% client-side; ticking this box is
+  the one part that leaves the browser, sending the domain to Hudson Rock to
+  surface an organisation-level info-stealer footprint (infected machines, staff
+  vs customer logins, malware families, login pages seen in the logs). It is off
+  by default and clearly labelled. **Powered by Hudson Rock.**
 
 ---
 
@@ -141,6 +159,8 @@ app/
     password/    # HIBP k-anonymity proxy (prefix only)
     breaches/    # LeakCheck + XposedOrNot fan-out & de-dupe
     username/    # Sherlock-style enumeration, streamed over SSE
+    infections/  # Hudson Rock email/username info-stealer lookup
+    domain-intel/# Hudson Rock org-domain info-stealer footprint
     health/      # upstream service status
   globals.css   # Tron/cyberpunk theme (committed dark)
   layout.tsx
@@ -157,7 +177,7 @@ lib/
   client/            # browser-side check orchestration + SSE consumer
   breaches/          # breach types + HTML-stripping for descriptions
   pdf/               # client-side PDF generation (jsPDF)
-  sources/           # upstream breach source adapters (hibp, leakcheck, xposedornot)
+  sources/           # upstream source adapters (hibp, leakcheck, xposedornot, hudsonrock)
   sherlock/          # username enumeration (loader, classify, check, curated subset)
 components/          # UI components (CheckForm, Results, OsintIntro, DomainSearch, Disclaimer)
 ```

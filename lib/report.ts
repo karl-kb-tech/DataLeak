@@ -7,6 +7,7 @@ import {
   passwordRemediation,
   breachRemediation,
   usernameRemediation,
+  infectionRemediation,
   type Remediation,
 } from '@/lib/remediation'
 
@@ -16,6 +17,14 @@ export interface ReportInput {
     email: string
     breaches: { name: string; title?: string; date?: string }[]
     usedLeakCheck: boolean
+  }
+  infections?: {
+    sent: string
+    infected: boolean
+    // High-level only — masked credentials are deliberately NOT carried into the
+    // PDF (the report is the one egress path; masked values are partial
+    // fingerprints).
+    targets: { target: string; records: number; lastCompromised?: string }[]
   }
   username?: { username: string; hits: { name: string }[] }
 }
@@ -75,6 +84,21 @@ export function buildReport(input: ReportInput, generatedAt: string): ReportMode
     if (input.breach.usedLeakCheck) {
       attributions.push('Breach data powered by LeakCheck (leakcheck.io).')
     }
+  }
+
+  if (input.infections) {
+    sections.push({
+      title: 'Info-stealer malware exposure',
+      sent: input.infections.sent,
+      remediation: infectionRemediation(input.infections.infected),
+      // High-level counts only — never the masked credentials themselves.
+      findings: input.infections.targets.map((t) => {
+        const records = `${t.records} info-stealer record${t.records === 1 ? '' : 's'}`
+        return t.lastCompromised
+          ? `${t.target}: found in ${records} (most recent ${t.lastCompromised})`
+          : `${t.target}: found in ${records}`
+      }),
+    })
   }
 
   if (input.username) {

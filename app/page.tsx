@@ -8,6 +8,7 @@ import { CheckForm, type CheckInput } from '@/components/CheckForm'
 import {
   PasswordResult,
   BreachResult,
+  InfectionResult,
   UsernameResult,
   type Slot,
   type UsernameState,
@@ -15,11 +16,30 @@ import {
 import {
   checkPassword,
   checkBreaches,
+  checkInfections,
   runUsernameSweep,
   type PasswordCheck,
   type BreachCheck,
+  type InfectionCheck,
 } from '@/lib/client/checks'
 import { buildReport, type ReportInput } from '@/lib/report'
+
+// Most recent infection date across a match's records, formatted for the PDF.
+// Records may carry no usable date (source sentinel mapped to undefined).
+function latestCompromised(
+  stealers: { dateCompromised?: string }[],
+): string | undefined {
+  const dates = stealers
+    .map((s) => s.dateCompromised)
+    .filter((d): d is string => Boolean(d))
+    .sort()
+  const latest = dates[dates.length - 1]
+  if (!latest) return undefined
+  const parsed = new Date(latest)
+  return Number.isNaN(parsed.getTime())
+    ? latest.slice(0, 10)
+    : parsed.toLocaleDateString('en-NZ', { dateStyle: 'long' })
+}
 
 const IDLE_USERNAME: UsernameState = {
   status: 'idle',
@@ -31,6 +51,7 @@ const IDLE_USERNAME: UsernameState = {
 export default function Home() {
   const [password, setPassword] = useState<Slot<PasswordCheck>>({ status: 'idle' })
   const [breach, setBreach] = useState<Slot<BreachCheck>>({ status: 'idle' })
+  const [infections, setInfections] = useState<Slot<InfectionCheck>>({ status: 'idle' })
   const [username, setUsername] = useState<UsernameState>(IDLE_USERNAME)
   // Only the values the result cards need to echo back — never the password.
   const [shown, setShown] = useState({ email: '', username: '' })
@@ -39,6 +60,7 @@ export default function Home() {
   const running =
     password.status === 'running' ||
     breach.status === 'running' ||
+    infections.status === 'running' ||
     username.status === 'running'
 
   function run(input: CheckInput) {
@@ -62,6 +84,17 @@ export default function Home() {
         .catch(() => setBreach({ status: 'error' }))
     } else {
       setBreach({ status: 'idle' })
+    }
+
+    // Hudson Rock info-stealer lookup covers both email and username. Run it
+    // whenever either was entered; it's its own section, separate from breaches.
+    if (input.email || input.username) {
+      setInfections({ status: 'running' })
+      checkInfections(input.email, input.username)
+        .then((data) => setInfections({ status: 'done', data }))
+        .catch(() => setInfections({ status: 'error' }))
+    } else {
+      setInfections({ status: 'idle' })
     }
 
     if (input.username) {
@@ -88,6 +121,7 @@ export default function Home() {
     abortRef.current?.abort()
     setPassword({ status: 'idle' })
     setBreach({ status: 'idle' })
+    setInfections({ status: 'idle' })
     setUsername(IDLE_USERNAME)
     setShown({ email: '', username: '' })
   }
@@ -95,11 +129,13 @@ export default function Home() {
   const hasResults =
     password.status !== 'idle' ||
     breach.status !== 'idle' ||
+    infections.status !== 'idle' ||
     username.status !== 'idle'
 
   const canDownload =
     password.status === 'done' ||
     breach.status === 'done' ||
+    infections.status === 'done' ||
     username.status === 'done'
 
   async function downloadPdf() {
@@ -111,6 +147,20 @@ export default function Home() {
         breaches: breach.data.breaches,
         // LeakCheck ToS: attribution required wherever its results are shown.
         usedLeakCheck: breach.data.sources.some((s) => s.source === 'leakcheck'),
+      }
+    }
+    if (infections.status === 'done') {
+      const found = infections.data.matches.filter((m) => m.found)
+      // High-level per-identifier summary only — the masked credentials shown
+      // on-screen deliberately never make it into the PDF egress path.
+      input.infections = {
+        sent: [shown.email, shown.username].filter(Boolean).join(', '),
+        infected: found.length > 0,
+        targets: found.map((m) => ({
+          target: m.target,
+          records: m.stealers.length,
+          lastCompromised: latestCompromised(m.stealers),
+        })),
       }
     }
     if (username.status === 'done') {
@@ -172,6 +222,11 @@ export default function Home() {
             </div>
             <PasswordResult slot={password} />
             <BreachResult slot={breach} email={shown.email} />
+            <InfectionResult
+              slot={infections}
+              email={shown.email}
+              username={shown.username}
+            />
             <UsernameResult state={username} username={shown.username} />
           </div>
         )}
@@ -180,8 +235,22 @@ export default function Home() {
       </div>
 
       <footer className="mt-12 border-t border-cyan-500/20 pt-6 text-xs text-slate-500">
-        An awareness-training aid — not a penetration-testing or people-search
-        tool. Results are ephemeral and never stored.
+        <p>
+          An awareness-training aid — not a penetration-testing or people-search
+          tool. Results are ephemeral and never stored.
+        </p>
+        <p className="mt-2">
+          Open source —{' '}
+          <a
+            href="https://github.com/karl-kb-tech/DataLeak"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-cyan-500/40 underline-offset-2 transition-colors hover:text-cyan-300"
+          >
+            view the code on GitHub
+          </a>
+          .
+        </p>
       </footer>
     </main>
   )

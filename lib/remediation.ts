@@ -51,6 +51,30 @@ export function breachRemediation(breachCount: number): Remediation {
   }
 }
 
+export function infectionRemediation(infected: boolean): Remediation {
+  if (!infected) {
+    return {
+      headline: "We didn't find this in known info-stealer malware logs.",
+      steps: [
+        'This only covers infections that have been collected — it is not a clean bill of health.',
+        'Keep devices updated, run trusted security software, and be wary of pirated or cracked downloads.',
+        'Use a unique password per account and turn on two-factor authentication.',
+      ],
+    }
+  }
+  return {
+    headline:
+      'A device that signed into your accounts was infected by password-stealing malware.',
+    steps: [
+      'Run a full antivirus or anti-malware scan on your devices, and remove anything it finds.',
+      'From a device you trust is clean, change your passwords — start with email and banking.',
+      'Turn on two-factor authentication everywhere it is offered.',
+      'Look at the partly-hidden passwords shown below — if you recognise one, change it everywhere you used it.',
+      'Avoid pirated software and suspicious downloads; that is how these infections usually spread.',
+    ],
+  }
+}
+
 export function usernameRemediation(hitCount: number): Remediation {
   if (hitCount === 0) {
     return {
