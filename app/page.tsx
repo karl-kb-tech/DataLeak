@@ -235,8 +235,22 @@ export default function Home() {
       </div>
 
       <footer className="mt-12 border-t border-cyan-500/20 pt-6 text-xs text-slate-500">
-        An awareness-training aid — not a penetration-testing or people-search
-        tool. Results are ephemeral and never stored.
+        <p>
+          An awareness-training aid — not a penetration-testing or people-search
+          tool. Results are ephemeral and never stored.
+        </p>
+        <p className="mt-2">
+          Open source —{' '}
+          <a
+            href="https://github.com/karl-kb-tech/DataLeak"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-cyan-500/40 underline-offset-2 transition-colors hover:text-cyan-300"
+          >
+            view the code on GitHub
+          </a>
+          .
+        </p>
       </footer>
     </main>
   )
