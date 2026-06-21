@@ -44,6 +44,33 @@ describe('buildReport', () => {
     expect(model.sections[0].remediation.headline).toMatch(/2 platforms/)
   })
 
+  it('adds an info-stealer section with high-level findings, no masked creds', () => {
+    const model = buildReport(
+      {
+        infections: {
+          sent: 'a@b.com, octocat',
+          infected: true,
+          targets: [
+            { target: 'a@b.com', records: 3, lastCompromised: '15 June 2026' },
+            { target: 'octocat', records: 1 },
+          ],
+        },
+      },
+      AT,
+    )
+    const section = model.sections[0]
+    expect(section.title).toBe('Info-stealer malware exposure')
+    expect(section.sent).toBe('a@b.com, octocat')
+    expect(section.findings).toEqual([
+      'a@b.com: found in 3 info-stealer records (most recent 15 June 2026)',
+      'octocat: found in 1 info-stealer record',
+    ])
+    expect(section.remediation.headline).toMatch(/malware/i)
+    // The masked credential fingerprints must never reach the PDF model.
+    const blob = JSON.stringify(model)
+    expect(blob).not.toMatch(/\*{2,}/)
+  })
+
   it('never echoes the raw password — only the fragment note', () => {
     const model = buildReport({ password: { pwned: true, count: 5 } }, AT)
     expect(model.sections[0].sent).toContain('never the password')

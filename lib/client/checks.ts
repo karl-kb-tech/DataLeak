@@ -9,6 +9,7 @@ import { hashPassword } from '@/lib/hashPassword'
 import { readSSE } from '@/lib/client/sse'
 import { BASE_PATH } from '@/lib/basePath'
 import type { Breach, SourceStatus } from '@/lib/breaches/types'
+import type { InfectionMatch, DomainIntel } from '@/lib/sources/hudsonrock'
 
 export interface PasswordCheck {
   pwned: boolean
@@ -78,6 +79,46 @@ export async function checkBreaches(email: string): Promise<BreachCheck> {
   })
   if (!res.ok) throw new Error('breach_check_failed')
   return (await res.json()) as BreachCheck
+}
+
+export interface InfectionCheck {
+  matches: InfectionMatch[]
+  sources: { source: 'hudsonrock'; ok: boolean }[]
+}
+
+export interface DomainIntelCheck {
+  intel: DomainIntel | null
+  source: { source: 'hudsonrock'; ok: boolean }
+}
+
+/**
+ * Look up an email and/or username in Hudson Rock's info-stealer dataset. Pass
+ * empty strings for identifiers that weren't entered — at least one is required.
+ */
+export async function checkInfections(
+  email: string,
+  username: string,
+): Promise<InfectionCheck> {
+  const res = await fetch(`${BASE_PATH}/api/infections`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, username }),
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error('infection_check_failed')
+  return (await res.json()) as InfectionCheck
+}
+
+/** Look up an organisation domain's info-stealer footprint (aggregate stats). */
+export async function checkDomainIntel(domain: string): Promise<DomainIntelCheck> {
+  const res = await fetch(`${BASE_PATH}/api/domain-intel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domain }),
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error('domain_intel_failed')
+  return (await res.json()) as DomainIntelCheck
 }
 
 export interface UsernameHandlers {

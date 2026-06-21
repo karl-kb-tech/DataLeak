@@ -3,6 +3,7 @@ import {
   passwordRemediation,
   breachRemediation,
   usernameRemediation,
+  infectionRemediation,
 } from './remediation'
 
 describe('passwordRemediation', () => {
@@ -31,6 +32,21 @@ describe('breachRemediation', () => {
   it('pluralises correctly', () => {
     expect(breachRemediation(1).headline).toMatch(/1 known data breach\b/)
     expect(breachRemediation(3).headline).toMatch(/3 known data breaches/)
+  })
+})
+
+describe('infectionRemediation', () => {
+  it('reassures (without a clean bill of health) when not infected', () => {
+    const r = infectionRemediation(false)
+    expect(r.headline).toMatch(/didn't find/i)
+    expect(r.steps.join(' ')).toMatch(/not a clean bill of health/i)
+  })
+
+  it('uses device-was-infected framing and lists scan + change steps', () => {
+    const r = infectionRemediation(true)
+    expect(r.headline).toMatch(/infected by password-stealing malware/i)
+    expect(r.steps[0]).toMatch(/scan/i)
+    expect(r.steps.join(' ')).toMatch(/two-factor/i)
   })
 })
 

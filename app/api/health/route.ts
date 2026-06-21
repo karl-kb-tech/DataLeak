@@ -12,6 +12,7 @@ export async function GET() {
       hibp,
       leakcheck: 'enabled',
       xposedornot: 'enabled',
+      hudsonrock: 'enabled',
     },
   })
 }
